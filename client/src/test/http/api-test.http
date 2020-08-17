@@ -1,0 +1,13 @@
+POST http://{{request-service}}/demo
+Content-Type: application/json
+
+{
+  "client": 1,
+  "request": "hello"
+}
+
+###
+
+GET http://{{request-service}}/actuator/health
+
+###

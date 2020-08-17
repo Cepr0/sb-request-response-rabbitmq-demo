@@ -1,0 +1,10 @@
+logging:
+  level:
+    io.github.cepr0: debug
+    org.springframework:
+      security: debug
+      web: debug
+      amqp: debug
+
+demo:
+  queue: demo.queue

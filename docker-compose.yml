@@ -1,0 +1,73 @@
+version: '2.3'
+
+networks:
+  dmz: {}
+  trust: {}
+
+services:
+  traefik:
+    image: traefik:v2.2
+    command: --api.insecure=true --providers.docker --log.level=debug
+    ports:
+      - "80:80"
+      - "8180:8080"
+    networks:
+      - dmz
+      - trust
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      - dmz
+      - trust
+    healthcheck:
+      test: rabbitmqctl status
+      interval: 20s
+      timeout: 5s
+      retries: 6
+
+  request-service:
+    build: client/.
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - DEMO_EXCHANGE=demo.exchange
+      - DEMO_ROUTINGKEY=demo.key
+      - LOGGING_LEVEL_IO_GITHUB_CEPR0=debug
+    networks:
+      - dmz
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    labels:
+      - "traefik.http.services.request-service.loadbalancer.server.port=8080"
+      - "traefik.http.services.request-service.loadbalancer.healthcheck.path=/actuator/health"
+      - "traefik.http.services.request-service.loadbalancer.healthcheck.port=8080"
+      - "traefik.http.services.request-service.loadbalancer.healthcheck.interval=5s"
+      - "traefik.http.routers.request-service-demo.rule=PathPrefix(`/demo`)"
+
+  response-service:
+    build: server/.
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - DEMO_EXCHANGE=demo.exchange
+      - DEMO_ROUTINGKEY=demo.key
+      - DEMO_QUEUE=demo.queue
+    networks:
+      - trust
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    labels:
+      - "traefik.http.services.response-service.loadbalancer.server.port=8080"
+      - "traefik.http.services.response-service.loadbalancer.healthcheck.path=/actuator/health"
+      - "traefik.http.services.response-service.loadbalancer.healthcheck.port=8080"
+      - "traefik.http.services.response-service.loadbalancer.healthcheck.interval=5s"
