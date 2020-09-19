@@ -8,6 +8,20 @@ Content-Type: application/json
 
 ###
 
+POST http://{{request-service}}/models
+Content-Type: application/json
+
+{
+  "num": {{$randomInt}},
+  "text": "{{$uuid}}"
+}
+
+###
+
+GET http://{{request-service}}/models
+
+###
+
 GET http://{{request-service}}/actuator/health
 
 ###

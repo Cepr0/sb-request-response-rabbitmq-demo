@@ -53,6 +53,7 @@ services:
       - "traefik.http.services.request-service.loadbalancer.healthcheck.port=8080"
       - "traefik.http.services.request-service.loadbalancer.healthcheck.interval=5s"
       - "traefik.http.routers.request-service-demo.rule=PathPrefix(`/demo`)"
+      - "traefik.http.routers.request-service-models.rule=PathPrefix(`/models`)"
 
   response-service:
     build: server/.
@@ -61,6 +62,7 @@ services:
       - DEMO_EXCHANGE=demo.exchange
       - DEMO_ROUTINGKEY=demo.key
       - DEMO_QUEUE=demo.queue
+      - LOGGING_LEVEL_IO_GITHUB_CEPR0=debug
     networks:
       - trust
     depends_on:

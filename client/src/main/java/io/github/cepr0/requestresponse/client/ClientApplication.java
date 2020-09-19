@@ -1,16 +1,18 @@
 package io.github.cepr0.requestresponse.client;
 
 import org.springframework.amqp.core.DirectExchange;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 
 @EnableConfigurationProperties(DemoProps.class)
+@ComponentScan("io.github.cepr0.requestresponse")
 @SpringBootApplication
 public class ClientApplication {
+
+    public static final String MODEL_EXCHANGE = "model.exchange";
 
     private final DemoProps props;
 
@@ -28,7 +30,8 @@ public class ClientApplication {
     }
 
     @Bean
-    public MessageConverter messageConverter() {
-        return new Jackson2JsonMessageConverter();
+    public DirectExchange modelExchange() {
+        return new DirectExchange(MODEL_EXCHANGE);
     }
+
 }

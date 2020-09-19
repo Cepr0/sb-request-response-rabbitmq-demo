@@ -1,6 +1,8 @@
 server:
   forward-headers-strategy: framework
   shutdown: graceful
+  error:
+    include-message: always
 
 spring:
   application:
