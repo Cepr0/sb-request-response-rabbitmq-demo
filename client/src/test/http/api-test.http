@@ -10,11 +10,41 @@ Content-Type: application/json
 
 POST http://{{request-service}}/models
 Content-Type: application/json
+Accept: application/json
 
 {
   "num": {{$randomInt}},
   "text": "{{$uuid}}"
 }
+
+> {%
+  client.test("Create a new Model", function() {
+    client.assert(response.status === 201, "Response status must be 201");
+    client.global.set("modelId", response.body.id);
+  });
+%}
+
+###
+
+GET http://{{request-service}}/models/{{modelId}}
+Accept: application/json
+
+> {%
+  client.test("Get one Model", function() {
+    client.assert(response.status === 200, "Response status must be 200");
+  });
+%}
+
+###
+
+GET http://{{request-service}}/models/e0061fd6-3916-4d17-93ac-952377a2ccc5
+Accept: application/json
+
+> {%
+  client.test("Get one Model - Not Found", function() {
+    client.assert(response.status === 404, "Response status must be 404");
+  });
+%}
 
 ###
 

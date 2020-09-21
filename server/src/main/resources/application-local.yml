@@ -2,6 +2,7 @@ logging:
   level:
     io.github.cepr0: debug
     org.springframework:
+      orm: debug
       security: debug
       web: debug
       amqp: debug
