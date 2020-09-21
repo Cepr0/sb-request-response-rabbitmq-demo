@@ -6,7 +6,11 @@ import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Map;
 
 import static java.text.MessageFormat.format;
 import static org.springframework.core.log.LogFormatUtils.formatValue;
@@ -25,19 +29,35 @@ public class OperationTemplate {
     }
 
     // @Transactional
-    public <T, S> S perform(@NonNull String operation, @NonNull T request, ParameterizedTypeReference<S> responseType) {
+    public <T> ResponseEntity<?> perform(@NonNull String operation, @NonNull T request) {
         log.debug("[d] Performing operation {}.{}: {}", baseName, operation, request);
 
         String operationName = baseName + "." + operation;
         String errorMessage;
         try {
-            S response = template.convertSendAndReceiveAsType(operationName, request, responseType);
+            ResponseStatusMessage<?> response = template.convertSendAndReceiveAsType(
+                    operationName,
+                    request,
+                    new ParameterizedTypeReference<>() {}
+            );
             if (response != null) {
                 log.debug("[d] Received {} response: {}", operationName, formatValue(response, true));
-                return response;
+                HttpStatus status = response.getStatus();
+                if (status != null) {
+                    if (status.is2xxSuccessful()) {
+                        var headers = response.httpHeaders();
+                        return ResponseEntity.status(status).headers(headers).body(response.getPayload());
+                    } else {
+                        var payload = ((Map<?, ?>) response.getPayload());
+                        throw new ResponseStatusException(status, ((String) payload.get("message")));
+                    }
+                } else {
+                    errorMessage = "Received response with status = null";
+                    log.error("[!] {}", errorMessage);
+                }
             } else {
                 errorMessage = format("Could not perform operation {0}: Received null as a response", operationName);
-                log.error("[!] " + errorMessage);
+                log.error("[!] {}", errorMessage);
             }
         } catch (AmqpException e) {
             errorMessage = format(

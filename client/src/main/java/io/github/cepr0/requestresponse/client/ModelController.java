@@ -4,15 +4,10 @@ import io.github.cepr0.requestresponse.common.OperationTemplate;
 import io.github.cepr0.requestresponse.common.model.dto.CreateModelRequest;
 import io.github.cepr0.requestresponse.common.model.dto.GetAllModelsRequest;
 import io.github.cepr0.requestresponse.common.model.dto.GetOneModelRequest;
-import io.github.cepr0.requestresponse.common.model.dto.ModelResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static io.github.cepr0.requestresponse.common.QueueConfig.*;
@@ -31,39 +26,27 @@ public class ModelController {
     }
 
     @PostMapping
-    public ResponseEntity<ModelResponse> create(@RequestBody CreateModelRequest request) {
+    public ResponseEntity<?> create(@RequestBody CreateModelRequest request) {
         log.debug("[d] Received: {}", request);
-        ModelResponse response = modelOperations.perform(
-                OPERATION_CREATE,
-                request,
-                new ParameterizedTypeReference<>() {}
-        );
-        log.debug("[d] Received: {}", formatValue(response, true));
-        return ResponseEntity.created(URI.create("/models/" + response.getId())).body(response);
+        ResponseEntity<?> response = modelOperations.perform(OPERATION_CREATE, request);
+        log.debug("[d] Received: {}", formatValue(response.getBody(), true));
+        return response;
     }
 
     @GetMapping
-    public List<ModelResponse> getAll() {
+    public ResponseEntity<?> getAll() {
         log.debug("[d] Received GetAllModelsRequest");
-        List<ModelResponse> response = modelOperations.perform(
-                OPERATION_GET_ALL,
-                new GetAllModelsRequest(),
-                new ParameterizedTypeReference<>() {}
-        );
-        log.debug("[d] Received List of all ModelResponse: {}", formatValue(response, true));
+        ResponseEntity<?> response = modelOperations.perform(OPERATION_GET_ALL, new GetAllModelsRequest());
+        log.debug("[d] Received: {}", formatValue(response.getBody(), true));
         return response;
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ModelResponse> getOne(@PathVariable UUID id) {
+    public ResponseEntity<?> getOne(@PathVariable UUID id) {
         GetOneModelRequest request = new GetOneModelRequest(id);
         log.debug("[d] Received: {}", request);
-        Optional<ModelResponse> response = modelOperations.perform(
-                OPERATION_GET,
-                request,
-                new ParameterizedTypeReference<>() {}
-        );
-        log.debug("[d] Received: {}", formatValue(response, true));
-        return ResponseEntity.of(response);
+        ResponseEntity<?> response = modelOperations.perform(OPERATION_GET, request);
+        log.debug("[d] Received: {}", formatValue(response.getBody(), true));
+        return response;
     }
 }

@@ -1,5 +1,6 @@
 package io.github.cepr0.requestresponse.server;
 
+import io.github.cepr0.requestresponse.common.ResponseStatusMessage;
 import io.github.cepr0.requestresponse.common.model.Model;
 import io.github.cepr0.requestresponse.common.model.ModelMapper;
 import io.github.cepr0.requestresponse.common.model.dto.CreateModelRequest;
@@ -8,11 +9,13 @@ import io.github.cepr0.requestresponse.common.model.dto.GetOneModelRequest;
 import io.github.cepr0.requestresponse.common.model.dto.ModelResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static io.github.cepr0.requestresponse.common.QueueConfig.*;
@@ -30,28 +33,37 @@ public class ModelService {
         this.modelMapper = modelMapper;
     }
 
-    @RabbitListener(queues = MODEL_CREATE)
-    public ModelResponse create(CreateModelRequest request) {
+    @RabbitListener(queues = MODEL_CREATE, errorHandler = "serviceErrorHandler")
+    public ResponseStatusMessage<?> create(CreateModelRequest request) {
         log.debug("[d] Received: {}", request);
         Model model = modelMapper.toModel(request);
-        return modelMapper.toModelResponse(modelRepo.save(model));
+        ModelResponse response = modelMapper.toModelResponse(modelRepo.save(model));
+        return ResponseStatusMessage.created(response, "/models/" + response.getId());
     }
 
     @Transactional(readOnly = true)
-    @RabbitListener(queues = MODEL_GET_ALL)
-    public List<ModelResponse> getAll(GetAllModelsRequest request) {
+    @RabbitListener(queues = MODEL_GET_ALL, errorHandler = "serviceErrorHandler")
+    public ResponseStatusMessage<?> getAll(GetAllModelsRequest request) {
         log.debug("[d] Received: {}", request);
-        return modelRepo.findAll()
+        List<ModelResponse> response = modelRepo.findAll()
                 .stream()
                 .map(modelMapper::toModelResponse)
                 .collect(Collectors.toList());
+        return ResponseStatusMessage.ok(response);
     }
 
     @Transactional(readOnly = true)
-    @RabbitListener(queues = MODEL_GET/*, errorHandler = "customErrorHandler"*/)
-    public Optional<ModelResponse> getOne(GetOneModelRequest request) {
+    @RabbitListener(queues = MODEL_GET, errorHandler = "serviceErrorHandler")
+    public ResponseStatusMessage<?> getOne(GetOneModelRequest request) {
         log.debug("[d] Received: {}", request);
         // if (true) throw new RuntimeException("test exception");
-        return modelRepo.findById(request.getId()).map(modelMapper::toModelResponse);
+        UUID modelId = request.getId();
+        ModelResponse response = modelRepo.findById(modelId)
+                .map(modelMapper::toModelResponse)
+                .orElseThrow(() -> new ResponseStatusException( // TODO Replace to ApiException
+                        HttpStatus.NOT_FOUND,
+                        "Model not found by id " + modelId
+                ));
+        return ResponseStatusMessage.ok(response);
     }
 }
