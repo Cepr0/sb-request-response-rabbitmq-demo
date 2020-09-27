@@ -5,3 +5,13 @@ logging:
       security: debug
       web: debug
       amqp: debug
+
+server:
+  port: 8081
+
+
+management:
+  server:
+    port: 8082
+    servlet:
+      context-path: /client

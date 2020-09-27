@@ -12,8 +12,10 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -23,6 +25,7 @@ import static io.github.cepr0.requestresponse.common.QueueConfig.*;
 @Slf4j
 @Service
 @Transactional
+@Validated
 public class ModelService {
 
     private final ModelRepo modelRepo;
@@ -34,7 +37,7 @@ public class ModelService {
     }
 
     @RabbitListener(queues = MODEL_CREATE, errorHandler = "serviceErrorHandler")
-    public ResponseStatusMessage<?> create(CreateModelRequest request) {
+    public ResponseStatusMessage<?> create(@Valid CreateModelRequest request) {
         log.debug("[d] Received: {}", request);
         Model model = modelMapper.toModel(request);
         ModelResponse response = modelMapper.toModelResponse(modelRepo.save(model));
@@ -54,9 +57,8 @@ public class ModelService {
 
     @Transactional(readOnly = true)
     @RabbitListener(queues = MODEL_GET, errorHandler = "serviceErrorHandler")
-    public ResponseStatusMessage<?> getOne(GetOneModelRequest request) {
+    public ResponseStatusMessage<?> getOne(@Valid GetOneModelRequest request) {
         log.debug("[d] Received: {}", request);
-        // if (true) throw new RuntimeException("test exception");
         UUID modelId = request.getId();
         ModelResponse response = modelRepo.findById(modelId)
                 .map(modelMapper::toModelResponse)
@@ -64,6 +66,7 @@ public class ModelService {
                         HttpStatus.NOT_FOUND,
                         "Model not found by id " + modelId
                 ));
+        // if (true) throw new RuntimeException("test exception"); // for testing
         return ResponseStatusMessage.ok(response);
     }
 }

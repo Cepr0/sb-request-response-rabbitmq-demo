@@ -32,7 +32,7 @@ public class ResponseStatusMessage<T> implements Serializable {
         return new ResponseStatusMessage<>(HttpStatus.INTERNAL_SERVER_ERROR, payload);
     }
 
-    public static <T> ResponseStatusMessage<T>  created(@NonNull T payload, @NonNull String location) {
+    public static <T> ResponseStatusMessage<T> created(@NonNull T payload, @NonNull String location) {
         return new ResponseStatusMessage<>(HttpStatus.CREATED, payload).addLocation(location);
     }
 

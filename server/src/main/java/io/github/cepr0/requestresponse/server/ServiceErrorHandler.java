@@ -1,6 +1,6 @@
 package io.github.cepr0.requestresponse.server;
 
-import io.github.cepr0.requestresponse.common.ResponseError;
+import io.github.cepr0.requestresponse.common.ErrorResponse;
 import io.github.cepr0.requestresponse.common.ResponseStatusMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -20,8 +20,9 @@ public class ServiceErrorHandler implements RabbitListenerErrorHandler {
             org.springframework.messaging.Message<?> message,
             ListenerExecutionFailedException exception
     ) {
-        log.debug("[d] Exception caught: {}", exception.toString());
         Throwable cause = NestedExceptionUtils.getMostSpecificCause(exception);
+        log.debug("[d] Caught an exception in {}", exception.getMessage());
+        log.debug("[d] Exception is {}", cause.toString());
         HttpStatus status;
         String errorMessage;
         if (cause instanceof ResponseStatusException) { // TODO Replace to ApiException
@@ -32,8 +33,9 @@ public class ServiceErrorHandler implements RabbitListenerErrorHandler {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
             errorMessage = cause.getMessage();
         }
-        ResponseError error = new ResponseError(status, errorMessage);
+        ErrorResponse error = new ErrorResponse(status, errorMessage);
         log.debug("[d] Sending error: {}", error);
+        // if (true) throw new RuntimeException("test exception");
         return new ResponseStatusMessage<>(status, error);
     }
 }

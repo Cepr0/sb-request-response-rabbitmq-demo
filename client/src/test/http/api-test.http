@@ -52,6 +52,6 @@ GET http://{{request-service}}/models
 
 ###
 
-GET http://{{request-service}}/actuator/health
+GET http://{{request-service-mgmt}}/client/actuator/health
 
 ###

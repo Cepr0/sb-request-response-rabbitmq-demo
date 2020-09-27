@@ -26,6 +26,7 @@ public class OperationTemplate {
         this.baseName = entityName;
         this.template = template;
         this.template.setReplyTimeout(2000); // TODO Must be moved to configuration props
+        // this.template.setChannelTransacted(true); // TODO Think about decoupling read-only and write transactions
     }
 
     // @Transactional

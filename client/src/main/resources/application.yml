@@ -21,5 +21,9 @@ spring:
       write_dates_as_timestamps: true
       write_date_timestamps_as_nanoseconds: false
       fail_on_empty_beans: false
+  rabbitmq:
+#    publisher-returns: true
+    template:
+      mandatory: true
 
 
